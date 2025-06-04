@@ -4,6 +4,49 @@ import { ElasticsearchService } from '../services/elasticsearchService.js';
 import { ConfigManager } from '../config/configManager.js';
 import logger from '../logger.js';
 
+// Helper function to extract key terms from exception messages
+function extractKeyTerms(message: string): string[] {
+  // Remove common words and extract meaningful terms
+  const stopWords = new Set([
+    'the',
+    'is',
+    'at',
+    'of',
+    'on',
+    'in',
+    'to',
+    'for',
+    'and',
+    'or',
+    'but',
+    'be',
+    'been',
+    'have',
+    'has',
+    'had',
+    'do',
+    'does',
+    'did',
+    'will',
+    'would',
+    'should',
+    'could',
+    'can',
+    'may',
+    'might',
+    'must',
+    'shall',
+  ]);
+
+  return message
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ') // Remove special characters
+    .split(/\s+/)
+    .filter((term: string) => term.length > 2 && !stopWords.has(term))
+    .filter((term: string, index: number, arr: string[]) => arr.indexOf(term) === index) // Remove duplicates
+    .slice(0, 5); // Take top 5 terms
+}
+
 const searchExceptionsSchema = z.object({
   environment: z
     .string()
@@ -29,6 +72,10 @@ const searchExceptionsSchema = z.object({
     .boolean()
     .default(false)
     .describe('Sort results by frequency (most frequent first)'),
+  smartSearch: z
+    .boolean()
+    .default(true)
+    .describe('Use smart search strategy that tries multiple approaches to find exceptions'),
 });
 
 function createSearchExceptionsHandler(teamId: string) {
@@ -50,16 +97,72 @@ function createSearchExceptionsHandler(teamId: string) {
         throw new Error(`Operation 'search_exceptions' not allowed for team '${teamId}'`);
       }
 
-      const results = await elasticsearchService.searchExceptions(teamId, {
-        environment: params.environment,
-        message: params.message || params.query,
-        service: params.service,
-        severity: params.severity,
-        timeRange: params.timeRange,
-        timeframe: params.timeframe,
-        limit: params.limit,
-        sortByFrequency: params.sortByFrequency,
-      });
+      let results;
+
+      if (params.smartSearch && (params.message || params.query)) {
+        // Smart search: try multiple search strategies in parallel
+        const searchTerm = params.message || params.query!;
+        const searchPromises = [];
+
+        // Strategy 1: Exact phrase search
+        searchPromises.push(
+          elasticsearchService.searchExceptions(teamId, {
+            ...params,
+            message: `"${searchTerm}"`,
+          })
+        );
+
+        // Strategy 2: Key terms search (extract important words)
+        const keyTerms = extractKeyTerms(searchTerm);
+        if (keyTerms.length > 0) {
+          searchPromises.push(
+            elasticsearchService.searchExceptions(teamId, {
+              ...params,
+              message: keyTerms.join(' '),
+            })
+          );
+        }
+
+        // Strategy 3: Fuzzy search for individual important words
+        const importantWords = keyTerms.filter(term => term.length > 4);
+        if (importantWords.length > 0) {
+          searchPromises.push(
+            elasticsearchService.searchExceptions(teamId, {
+              ...params,
+              message: importantWords[0], // Most important word
+            })
+          );
+        }
+
+        // Execute all searches in parallel
+        const allResults = await Promise.allSettled(searchPromises);
+
+        // Combine and deduplicate results
+        const combinedResults = new Map();
+        allResults
+          .filter(result => result.status === 'fulfilled')
+          .forEach((result: any) => {
+            result.value.forEach((item: any) => {
+              if (!combinedResults.has(item.id)) {
+                combinedResults.set(item.id, item);
+              }
+            });
+          });
+
+        results = Array.from(combinedResults.values()).slice(0, params.limit);
+      } else {
+        // Standard search
+        results = await elasticsearchService.searchExceptions(teamId, {
+          environment: params.environment,
+          message: params.message || params.query,
+          service: params.service,
+          severity: params.severity,
+          timeRange: params.timeRange,
+          timeframe: params.timeframe,
+          limit: params.limit,
+          sortByFrequency: params.sortByFrequency,
+        });
+      }
 
       logger.info(`Found ${results.length} exceptions for team ${teamId}`);
 
