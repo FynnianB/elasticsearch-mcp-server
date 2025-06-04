@@ -1,0 +1,64 @@
+{
+  "name": "elasticsearch-mcp",
+  "version": "1.0.0",
+  "description": "Elasticsearch Integration with MCP - Multi-team and multi-environment support",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --outfile=dist/bundle.js --platform=node --target=es2020 --format=esm --sourcemap --external:@modelcontextprotocol/sdk --external:axios --external:express --external:winston --external:zod --external:@elastic/elasticsearch --external:date-fns",
+    "prod": "node dist/bundle.js",
+    "dev": "tsx watch src/index.ts",
+    "cli": "tsx src/cli.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "start": "npm run build && npm run prod",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint && npm run format:check"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "elasticsearch",
+    "multi-team",
+    "multi-environment",
+    "exceptions",
+    "monitoring",
+    "logging",
+    "analytics",
+    "observability"
+  ],
+  "author": "Fynnian Brosius",
+  "license": "MIT",
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.11.0",
+    "@modelcontextprotocol/sdk": "^1.10.2",
+    "axios": "^1.6.8",
+    "commander": "^14.0.0",
+    "date-fns": "^2.30.0",
+    "express": "^4.19.2",
+    "winston": "^3.17.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.19",
+    "esbuild": "^0.25.3",
+    "eslint": "^9.26.0",
+    "eslint-config-prettier": "^10.1.2",
+    "prettier": "^3.5.3",
+    "tsx": "^4.7.1",
+    "typescript-eslint": "^8.31.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist/",
+    "teams-config.example.json",
+    "README.md",
+    "LICENSE"
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "server": {
+    "name": "elasticsearch-mcp",
+    "version": "1.0.0"
+  },
+  "teams": {
+    "team-alpha": {
+      "teamId": "team-alpha",
+      "teamName": "Team Alpha",
+      "defaultEnvironment": "production",
+      "environments": {
+        "staging": {
+          "node": "https://alpha-staging-es.company.com",
+          "apiKey": "staging-api-key-for-alpha"
+        },
+        "production": {
+          "node": "https://alpha-prod-es.company.com",
+          "apiKey": "prod-api-key-for-alpha"
+        }
+      },
+      "indexPatterns": {
+        "exceptions": ["alpha-logs-*", "alpha-exceptions-*"],
+        "applications": ["alpha-apm-*", "alpha-metrics-*"],
+        "logs": ["alpha-app-logs-*"]
+      },
+      "maxSearchResults": 50,
+      "allowedOperations": ["search_exceptions", "analyze_exceptions", "search_logs"]
+    },
+    "team-beta": {
+      "teamId": "team-beta",
+      "teamName": "Team Beta",
+      "defaultEnvironment": "production",
+      "environments": {
+        "staging": {
+          "node": "https://beta-staging-es.company.com",
+          "username": "beta-staging",
+          "password": "beta-staging-password"
+        },
+        "production": {
+          "node": "https://beta-prod-es.company.com",
+          "apiKey": "prod-api-key-for-beta"
+        }
+      },
+      "indexPatterns": {
+        "exceptions": ["beta-logs-*", "beta-errors-*"],
+        "applications": ["beta-apm-*"]
+      },
+      "maxSearchResults": 25,
+      "allowedOperations": ["search_exceptions", "search_logs"]
+    },
+    "team-gamma": {
+      "teamId": "team-gamma",
+      "teamName": "Team Gamma - DevOps",
+      "defaultEnvironment": "production",
+      "environments": {
+        "development": {
+          "node": "https://gamma-dev-es.company.com",
+          "username": "gamma-dev",
+          "password": "gamma-dev-password"
+        },
+        "staging": {
+          "node": "https://gamma-staging-es.company.com",
+          "apiKey": "staging-api-key-for-gamma"
+        },
+        "production": {
+          "node": "https://gamma-prod-es.company.com",
+          "apiKey": "prod-api-key-for-gamma"
+        }
+      },
+      "indexPatterns": {
+        "exceptions": ["gamma-*-exceptions-*", "gamma-*-errors-*"],
+        "applications": ["gamma-*-apm-*", "gamma-*-metrics-*"],
+        "logs": ["gamma-*-logs-*"]
+      },
+      "maxSearchResults": 100
+    }
+  }
+}
