@@ -142,7 +142,8 @@ export async function startHttpServer(): Promise<void> {
   //=============================================================================
   try {
     const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
-    app.listen(port, () => {
+    const host = process.env.HOST ? process.env.HOST : '0.0.0.0';
+    app.listen(port, host, () => {
       logger.info(`HTTP server listening on port ${port} (all interfaces)`);
       logger.info(
         `  - HTTP+SSE:      ${httpServerConfig.ssePath} (GET), ${httpServerConfig.messagesPath} (POST)`
